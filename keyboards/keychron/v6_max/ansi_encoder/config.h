@@ -52,3 +52,5 @@
 #    define RGB_MATRIX_FRAMEBUFFER_EFFECTS
 
 #endif
+/* Bryan Additions */
+# define DOUBLE_TAP_SHIFT_TURNS_ON_CAPS_WORD
