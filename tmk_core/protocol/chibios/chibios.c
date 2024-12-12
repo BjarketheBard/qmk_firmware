@@ -205,5 +205,11 @@ void protocol_post_task(void) {
 #ifdef VIRTSER_ENABLE
     virtser_task();
 #endif
+<<<<<<< HEAD
+=======
+#ifdef RAW_ENABLE
+    raw_hid_task();
+#endif
+>>>>>>> my-changes
     usb_idle_task();
 }

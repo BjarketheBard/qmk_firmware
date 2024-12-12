@@ -54,6 +54,13 @@ extern keymap_config_t keymap_config;
 extern usb_endpoint_in_t  usb_endpoints_in[USB_ENDPOINT_IN_COUNT];
 extern usb_endpoint_out_t usb_endpoints_out[USB_ENDPOINT_OUT_COUNT];
 
+<<<<<<< HEAD
+=======
+uint8_t _Alignas(2) keyboard_idle     = 0;
+uint8_t _Alignas(2) keyboard_protocol = 1;
+uint8_t keyboard_led_state            = 0;
+
+>>>>>>> my-changes
 static bool __attribute__((__unused__)) send_report_buffered(usb_endpoint_in_lut_t endpoint, void *report, size_t size);
 static void __attribute__((__unused__)) flush_report_buffered(usb_endpoint_in_lut_t endpoint, bool padded);
 static bool __attribute__((__unused__)) receive_report(usb_endpoint_out_lut_t endpoint, void *report, size_t size);
@@ -200,6 +207,10 @@ static void usb_event_cb(USBDriver *usbp, usbevent_t event) {
         case USB_EVENT_RESET:
             usb_event_queue_enqueue(event);
             chSysLockFromISR();
+<<<<<<< HEAD
+=======
+            if (event == USB_EVENT_RESET) keyboard_protocol = 1;
+>>>>>>> my-changes
             for (int i = 0; i < USB_ENDPOINT_IN_COUNT; i++) {
                 usb_endpoint_in_suspend_cb(&usb_endpoints_in[i]);
             }
@@ -291,12 +302,20 @@ static bool usb_requests_hook_cb(USBDriver *usbp) {
                         break;
                     case HID_REQ_SetProtocol:
                         if (setup->wIndex == KEYBOARD_INTERFACE) {
+<<<<<<< HEAD
                             usb_device_state_set_protocol(setup->wValue.lbyte);
+=======
+                            keyboard_protocol = setup->wValue.word;
+>>>>>>> my-changes
                         }
                         usbSetupTransfer(usbp, NULL, 0, NULL);
                         return true;
                     case HID_REQ_SetIdle:
+<<<<<<< HEAD
                         usb_device_state_set_idle_rate(setup->wValue.hbyte);
+=======
+                        keyboard_idle = setup->wValue.hbyte;
+>>>>>>> my-changes
                         return usb_set_idle_cb(usbp);
                 }
                 break;
@@ -362,6 +381,7 @@ void init_usb_driver(USBDriver *usbp) {
     usbConnectBus(usbp);
 }
 
+<<<<<<< HEAD
 __attribute__((weak)) void restart_usb_driver(USBDriver *usbp) {
     usbDisconnectBus(usbp);
     usbStop(usbp);
@@ -386,6 +406,9 @@ __attribute__((weak)) void restart_usb_driver(USBDriver *usbp) {
         usb_endpoint_out_start(&usb_endpoints_out[i]);
     }
 
+=======
+__attribute__((weak)) void usb_start(USBDriver *usbp) {
+>>>>>>> my-changes
     usbStart(usbp, &usbcfg);
     usbConnectBus(usbp);
 }
@@ -394,6 +417,44 @@ __attribute__((weak)) void restart_usb_driver(USBDriver *usbp) {
  *                  Keyboard functions
  * ---------------------------------------------------------
  */
+
+<<<<<<< HEAD
+/**
+ * @brief Send a report to the host, the report is enqueued into an output
+ * queue and send once the USB endpoint becomes empty.
+ *
+ * @param endpoint USB IN endpoint to send the report from
+ * @param report pointer to the report
+ * @param size size of the report
+ * @return true Success
+ * @return false Failure
+ */
+bool send_report(usb_endpoint_in_lut_t endpoint, void *report, size_t size) {
+    return usb_endpoint_in_send(&usb_endpoints_in[endpoint], (uint8_t *)report, size, TIME_MS2I(100), false);
+}
+
+/**
+ * @brief Send a report to the host, but delay the sending until the size of
+ * endpoint report is reached or the incompletely filled buffer is flushed with
+ * a call to `flush_report_buffered`. This is useful if the report is being
+ * updated frequently. The complete report is then enqueued into an output
+ * queue and send once the USB endpoint becomes empty.
+ *
+ * @param endpoint USB IN endpoint to send the report from
+ * @param report pointer to the report
+ * @param size size of the report
+ * @return true Success
+ * @return false Failure
+ */
+static bool send_report_buffered(usb_endpoint_in_lut_t endpoint, void *report, size_t size) {
+    return usb_endpoint_in_send(&usb_endpoints_in[endpoint], (uint8_t *)report, size, TIME_MS2I(100), true);
+}
+
+=======
+/* LED status */
+uint8_t keyboard_leds(void) {
+    return keyboard_led_state;
+}
 
 /**
  * @brief Send a report to the host, the report is enqueued into an output
@@ -426,6 +487,7 @@ static bool send_report_buffered(usb_endpoint_in_lut_t endpoint, void *report, s
     return usb_endpoint_in_send(&usb_endpoints_in[endpoint], (uint8_t *)report, size, TIME_MS2I(100), true);
 }
 
+>>>>>>> my-changes
 /** @brief Flush all buffered reports which were enqueued with a call to
  * `send_report_buffered` that haven't been send. If necessary the buffered
  * report can be padded with zeros up to the endpoints maximum size.
@@ -452,7 +514,11 @@ static bool receive_report(usb_endpoint_out_lut_t endpoint, void *report, size_t
 
 void send_keyboard(report_keyboard_t *report) {
     /* If we're in Boot Protocol, don't send any report ID or other funky fields */
+<<<<<<< HEAD
     if (usb_device_state_get_protocol() == USB_PROTOCOL_BOOT) {
+=======
+    if (!keyboard_protocol) {
+>>>>>>> my-changes
         send_report(USB_ENDPOINT_IN_KEYBOARD, &report->mods, 8);
     } else {
         send_report(USB_ENDPOINT_IN_KEYBOARD, report, KEYBOARD_REPORT_SIZE);
@@ -553,6 +619,19 @@ void send_midi_packet(MIDI_EventPacket_t *event) {
 
 bool recv_midi_packet(MIDI_EventPacket_t *const event) {
     return receive_report(USB_ENDPOINT_OUT_MIDI, (uint8_t *)event, sizeof(MIDI_EventPacket_t));
+<<<<<<< HEAD
+=======
+}
+
+void midi_ep_task(void) {
+    uint8_t buffer[MIDI_STREAM_EPSIZE];
+    while (receive_report(USB_ENDPOINT_OUT_MIDI, buffer, sizeof(buffer))) {
+        MIDI_EventPacket_t event;
+        // TODO: this seems totally wrong? The midi task will never see any
+        // packets if we consume them here
+        recv_midi_packet(&event);
+    }
+>>>>>>> my-changes
 }
 
 #endif
